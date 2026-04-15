@@ -1,5 +1,8 @@
 // vite.config.js
+import basicSsl from '@vitejs/plugin-basic-ssl';
+
 export default {
+  plugins: [basicSsl()],
   // Expose the dev server to the local network so you can test on mobile.
   // After `npm run dev`, Vite will print both localhost and network URLs.
   server: {

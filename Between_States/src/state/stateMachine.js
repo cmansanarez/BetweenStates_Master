@@ -84,6 +84,10 @@ export class StateMachine {
    * @param {{ faceDetected: boolean }|null} arState
    */
   update(audioState, arState = null) {
+    // Demo cycle button locks the state for a few seconds so each forced
+    // state is visible before audio resumes control.
+    if (Date.now() < this._store.lockedUntil) return;
+
     const level   = audioState.level;
     const current = this._store.current;
 

@@ -72,7 +72,7 @@
         width: 100%;
         height: 100%;
         display: block;
-        z-index: 1;
+        z-index: 2;
         pointer-events: none;
       }
 
@@ -87,7 +87,7 @@
         width: 100%;
         height: 100%;
         display: block;
-        z-index: 2;
+        z-index: 1;
       }
 
       /* ── State HUD ── */
@@ -147,6 +147,24 @@
         font-size: 0.7rem;
         letter-spacing: 0.12em;
         padding: 0.4rem 0.7rem;
+        cursor: pointer;
+        touch-action: manipulation;
+        display: none; /* shown by app.js after experience starts */
+      }
+
+      /* ── State cycle button (demo / evaluator shortcut) ── */
+      #state-cycle {
+        position: fixed;
+        bottom: 1.2rem;
+        right: 1.2rem;
+        z-index: 200;
+        background: rgba(255, 255, 255, 0.07);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        color: rgba(255, 255, 255, 0.45);
+        font-family: "Courier New", Courier, monospace;
+        font-size: 0.55rem;
+        letter-spacing: 0.18em;
+        padding: 0.35rem 0.65rem;
         cursor: pointer;
         touch-action: manipulation;
         display: none; /* shown by app.js after experience starts */
@@ -213,6 +231,9 @@
 
     <!-- Camera flip button — shown after experience starts -->
     <button id="camera-flip" aria-label="flip camera">flip cam</button>
+
+    <!-- State cycle button — evaluator shortcut to preview all states -->
+    <button id="state-cycle" aria-label="cycle state">cycle →</button>
 
     <!-- State HUD — shown after experience starts -->
     <div id="state-hud">

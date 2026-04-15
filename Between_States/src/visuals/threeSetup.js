@@ -49,6 +49,8 @@ export class ThreeSetup {
     this._arState    = null;
     this._audioState = null;
     this._stateStore = null;
+    this._time       = 0;    // frame counter for orbit + spin animations
+    this._orbitals   = [];   // additional geometric shapes orbiting in rear-camera mode
   }
 
   /**
@@ -89,6 +91,9 @@ export class ThreeSetup {
     this._scene.add(key);
 
     window.addEventListener('resize', () => this._onResize());
+
+    // Create the geometric orbiting companion shapes.
+    this._setupOrbitals();
   }
 
   /**
@@ -227,33 +232,22 @@ export class ThreeSetup {
   _update() {
     if (!this._object || !this._arState || !this._normScale) return;
 
+    this._time++;
     const ar     = this._arState;
     const aspect = window.innerWidth / window.innerHeight;
+    const t      = this._time / 60; // time in seconds at 60 fps
+    const level  = this._audioState?.level ?? 0;
 
-    // ── Audio-reactive opacity + state-driven material color tint ───────────
-    // Quiet  (level→0) → opacity near MAX_OPACITY: mask is solid, identity hidden.
-    // Loud   (level→1) → opacity near MIN_OPACITY: mask fades, face emerges.
-    // emissive color shifts with state — mirrors pitch site palette so the
-    // 3D object reads clearly as belonging to the current behavioral phase.
-    //   idle        → aqua   #44FFD1
-    //   emergence   → blue   #304FFE
-    //   distortion  → pink   #FF1D89
-    //   collapse    → yellow #FFEC00
-    // emissiveIntensity is driven by audio level so the tint pulses with sound.
+    // ── Audio + state-driven material tint on the GLB mask ───────────────
+    // Palette matches the pitch site exactly per state.
+    //   idle → aqua #44FFD1 · emergence → blue #304FFE
+    //   distortion → pink #FF1D89 · collapse → yellow #FFEC00
     if (this._audioState && this._materials.length) {
-      const level       = this._audioState.level ?? 0;
-      const audioFactor = Math.min(Math.pow(level * 8, 0.4), 1); // 0→1
-      const opacity     = 0.85 - audioFactor * 0.75;             // 0.85 quiet → 0.10 loud
-
-      const STATE_COLORS = {
-        idle:       new THREE.Color(0x44FFD1),
-        emergence:  new THREE.Color(0x304FFE),
-        distortion: new THREE.Color(0xFF1D89),
-        collapse:   new THREE.Color(0xFFEC00),
-      };
+      const audioFactor = Math.min(Math.pow(level * 8, 0.4), 1);
+      const opacity     = 0.85 - audioFactor * 0.75; // 0.85 quiet → 0.10 loud
       const stateName   = this._stateStore?.current ?? 'idle';
-      const tintColor   = STATE_COLORS[stateName] ?? STATE_COLORS.idle;
-      const emissiveInt = audioFactor * 0.55; // max emissive at peak audio
+      const tintColor   = ThreeSetup.STATE_COLORS[stateName];
+      const emissiveInt = 0.3 + audioFactor * 0.55;
 
       this._materials.forEach((mat) => {
         mat.opacity = opacity;
@@ -264,46 +258,186 @@ export class ThreeSetup {
       });
     }
 
-    if (ar.faceDetected) {
+    const isRear = ar.facingMode === 'environment';
+
+    if (isRear) {
+      // ── REAR-CAMERA / ORBIT MODE ─────────────────────────────────────────
+      // Main GLB mask orbits the screen centre. Geometric companions also orbit.
+      // No face tracking — camera is looking at the world, not the user.
       this._object.visible = true;
 
-      // ── Tuning constants ──────────────────────────────────────────────────
-      // EYE_OFFSET_Y: downward shift from eye midpoint toward face centre.
-      //   The anchor (faceAnchorY) sits at the eye-corner line. Increase this
-      //   to push the mask down if the model's eyes are sitting too high.
-      const EYE_OFFSET_Y = 1.5;
-      // SCALE_FACTOR: final size = normScale × faceSize × SCALE_FACTOR.
-      //   1.0 = model fills roughly the face bounding box width.
-      //   Increase to make the object larger, decrease to shrink it.
-      const SCALE_FACTOR = 5.0;
+      const ORBIT_SPEED  = 0.4;
+      const ORBIT_X      = aspect * 0.45;
+      const ORBIT_Y      = 0.45;
+      const ORBIT_SCALE  = 0.35;
+      const scalePulse   = 1 + level * 0.8;
 
-      // ── Position ──────────────────────────────────────────────────────────
-      // Map eye-midpoint from normalised video coords to ortho world coords:
-      //   normX 0→1 : left (−aspect) to right (+aspect)
-      //   normY 0→1 : top (+1) to bottom (−1)  [Three.js y-up, CSS y-down]
-      //
-      // The Y offset shifts the anchor down from the eye line toward the face
-      // centre. eyeDistance is normalised by vw; divide by aspect to convert
-      // to the same scale as the ortho camera's vertical (±1) range.
-      this._object.position.x = (ar.faceAnchorX * 2 - 1) * aspect;
-      this._object.position.y = -(ar.faceAnchorY * 2 - 1)
-                                 - (ar.eyeDistance / aspect) * EYE_OFFSET_Y;
+      this._object.position.x = Math.cos(t * ORBIT_SPEED) * ORBIT_X;
+      this._object.position.y = Math.sin(t * ORBIT_SPEED) * ORBIT_Y;
       this._object.position.z = 0;
+      this._object.scale.setScalar(this._normScale * ORBIT_SCALE * scalePulse);
+      this._object.rotation.x += 0.010;
+      this._object.rotation.y += 0.018;
+      this._object.rotation.z += 0.005;
 
-      // ── Scale ─────────────────────────────────────────────────────────────
-      // normScale cancels out the model's native bounding box size so the
-      // multiplier is always relative to 1 world unit, not the raw geometry.
-      // faceSize (bbox width / video width) uses the same reference as the
-      // Hydra CSS mask so both layers scale together.
-      this._object.scale.setScalar(this._normScale * ar.faceSize * SCALE_FACTOR);
-
-      // ── Head tilt → Z rotation ────────────────────────────────────────────
-      // headTilt −1…1 maps to roughly ±23° (0.4 rad).
-      this._object.rotation.z = -ar.headTilt * 0.4;
+      this._updateOrbitals(t, aspect, level, true);
 
     } else {
-      this._object.visible = false;
+      // ── SELFIE / FACE-TRACKING MODE ──────────────────────────────────────
+      // Geometric orbitals are hidden — camera is looking at the user's face.
+      this._updateOrbitals(t, aspect, level, false);
+
+      if (ar.faceDetected) {
+        // Face anchor: GLB mask maps to detected face keypoints
+        this._object.visible = true;
+
+        const SCALE_FACTOR = 2.0;
+
+        // Position from bounding-box centre (faceX/faceY) — the same reference
+        // the Hydra CSS mask uses, so the model sits directly over the face oval.
+        this._object.position.x = (ar.faceX * 2 - 1) * aspect;
+        this._object.position.y = -(ar.faceY * 2 - 1);
+        this._object.position.z = 0;
+        this._object.scale.setScalar(this._normScale * ar.faceSize * SCALE_FACTOR);
+
+        // Z rotation mirrors head tilt; no accumulated spin in face-tracking mode
+        this._object.rotation.z = -ar.headTilt * 0.4;
+
+      } else {
+        // No face in selfie mode — hide the mask; don't orbit it
+        this._object.visible = false;
+      }
     }
+  }
+
+  // ── Static palette shared between GLB material tint and orbital emissive ──
+  static get STATE_COLORS() {
+    return {
+      idle:       new THREE.Color(0x44FFD1),
+      emergence:  new THREE.Color(0x304FFE),
+      distortion: new THREE.Color(0xFF1D89),
+      collapse:   new THREE.Color(0xFFEC00),
+    };
+  }
+
+  /**
+   * _setupOrbitals()
+   * ─────────────────
+   * Creates four geometric Three.js meshes — icosahedron, torus, octahedron,
+   * and tetrahedron — each tinted with one of the four pitch-site state colors.
+   * They are added to the scene hidden; _updateOrbitals() positions and shows
+   * them in rear-camera mode and hides them in selfie mode.
+   *
+   * Shape → Color mapping mirrors the state palette so the scene always uses
+   * all four hues simultaneously regardless of the current audio state:
+   *   Icosahedron → aqua  #44FFD1   (idle)
+   *   Torus       → pink  #FF1D89   (distortion) — ring reads as "signal loop"
+   *   Octahedron  → blue  #304FFE   (emergence)
+   *   Tetrahedron → yellow #FFEC00  (collapse)
+   *
+   * Each orbital stores its own spin rates and orbit parameters so they move
+   * independently and never perfectly align (creating a constantly evolving
+   * composition).
+   */
+  _setupOrbitals() {
+    const defs = [
+      {
+        geom:  new THREE.IcosahedronGeometry(0.065, 1),
+        color: 0x44FFD1,
+        rx: 0.32,   // orbit x-radius multiplied by aspect in _update
+        ry: 0.55,   // orbit y-radius
+        speed: 0.62,
+        phase: 0,
+        spin: [0.014, 0.022, 0.007],
+      },
+      {
+        geom:  new THREE.TorusGeometry(0.055, 0.018, 8, 24),
+        color: 0xFF1D89,
+        rx: 0.50,
+        ry: 0.26,
+        speed: 0.37,
+        phase: Math.PI * 0.5,
+        spin: [0.020, 0.009, 0.017],
+      },
+      {
+        geom:  new THREE.OctahedronGeometry(0.075, 0),
+        color: 0x304FFE,
+        rx: 0.20,
+        ry: 0.62,
+        speed: 0.80,
+        phase: Math.PI,
+        spin: [0.017, 0.026, 0.011],
+      },
+      {
+        geom:  new THREE.TetrahedronGeometry(0.070, 0),
+        color: 0xFFEC00,
+        rx: 0.48,
+        ry: 0.40,
+        speed: 0.45,
+        phase: Math.PI * 1.5,
+        spin: [0.024, 0.013, 0.019],
+      },
+    ];
+
+    this._orbitals = defs.map(def => {
+      const mat = new THREE.MeshStandardMaterial({
+        color:            new THREE.Color(def.color),
+        emissive:         new THREE.Color(def.color),
+        emissiveIntensity: 0.9,
+        transparent:      true,
+        opacity:          0.92,
+        roughness:        0.15,
+        metalness:        0.65,
+      });
+      const mesh = new THREE.Mesh(def.geom, mat);
+      mesh.visible = false;
+      this._scene.add(mesh);
+      return { mesh, mat, ...def };
+    });
+  }
+
+  /**
+   * _updateOrbitals(t, aspect, level, visible)
+   * ───────────────────────────────────────────
+   * Positions each orbital on its elliptical path and updates its emissive
+   * intensity with the audio level. Pass visible=false to hide all orbitals
+   * (selfie mode).
+   *
+   * Orbit formula:
+   *   x = cos(t * speed + phase) * rx * aspect
+   *   y = sin(t * speed + phase) * ry
+   * Each shape also has independent spin on all three axes.
+   *
+   * Audio pulse: scale inflates by up to 40% at peak level so each shape
+   * "breathes" with the sound independently of its orbital position.
+   */
+  _updateOrbitals(t, aspect, level, visible) {
+    const scalePulse = 1 + level * 0.6;
+
+    this._orbitals.forEach((o) => {
+      if (!visible) {
+        o.mesh.visible = false;
+        return;
+      }
+
+      o.mesh.visible = true;
+      const theta = t * o.speed + o.phase;
+
+      o.mesh.position.x = Math.cos(theta) * o.rx * aspect;
+      o.mesh.position.y = Math.sin(theta) * o.ry;
+      o.mesh.position.z = Math.sin(theta * 0.7 + o.phase) * 0.3; // subtle Z depth
+
+      o.mesh.scale.setScalar(scalePulse);
+
+      o.mesh.rotation.x += o.spin[0];
+      o.mesh.rotation.y += o.spin[1];
+      o.mesh.rotation.z += o.spin[2];
+
+      // Emissive intensity pulses with audio — always clearly visible (min 0.6)
+      o.mat.emissiveIntensity = 0.6 + level * 0.8;
+      // Opacity stays high so shapes read against the camera feed and Hydra
+      o.mat.opacity = 0.85 - level * 0.25;
+    });
   }
 
   _onResize() {

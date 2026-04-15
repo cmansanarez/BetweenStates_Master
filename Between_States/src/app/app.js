@@ -135,14 +135,24 @@ export class App {
       // Show and wire the camera flip button.
       this._setupFlipButton();
 
+      // Show and wire the evaluator state-cycle button.
+      this._setupStateCycleButton();
+
     } catch (err) {
       // Mic access was denied or the AudioContext failed.
       // Show the error inline so the user knows what happened.
       console.error('[Between States] Audio init failed:', err);
 
-      const msg = err?.message?.toLowerCase().includes('denied')
+      const isDenied = err?.message?.toLowerCase().includes('denied')
+                    || err?.name === 'NotAllowedError';
+      const isSecure = err?.name === 'SecurityError'
+                    || err?.message?.toLowerCase().includes('insecure')
+                    || err?.message?.toLowerCase().includes('secure');
+      const msg = isDenied
         ? 'microphone access was denied — please allow access and refresh'
-        : 'could not start audio — please try again';
+        : isSecure
+          ? 'requires https — open via https or localhost'
+          : `could not start audio — ${err?.name ?? ''}: ${err?.message ?? 'unknown'}`;
 
       this._errorMsg.textContent = msg;
       this._errorMsg.style.display = 'block';
@@ -227,10 +237,10 @@ export class App {
       // When a face is detected, guarantee a minimum opacity of 0.6 so the
       // mask effect is always visible — even in near-silence the glitch shows
       // on the face. Audio still pushes it to 1 for full domination.
-      const audioOpacity = Math.min(Math.pow(level * 8, 0.4), 1);
-      const opacity      = arState.faceDetected
-        ? Math.max(audioOpacity, 0.6)
-        : audioOpacity;
+      // Floor raised to 0.85 — Hydra is always prominently visible.
+      // Audio still pushes to 1.0 at loud levels.
+      const audioOpacity = 0.85 + Math.min(Math.pow(level * 8, 0.4), 1) * 0.15;
+      const opacity      = audioOpacity;
 
       this._hydraCanvas.style.opacity = opacity;
 
@@ -285,6 +295,42 @@ export class App {
       }
       this._flipBtn.textContent = 'flip cam';
       this._flipBtn.disabled = false;
+    });
+  }
+
+  /**
+   * _setupStateCycleButton()
+   * ─────────────────────────
+   * Shows the demo cycle button (bottom-right) and wires it to cycle through
+   * idle → emergence → distortion → collapse → idle in a loop.
+   *
+   * Each tap locks the state for 4 s so the evaluator has time to see it
+   * before audio resumes control. The state HUD and 3D object color change
+   * immediately so the visual result is instantaneous.
+   */
+  _setupStateCycleButton() {
+    const btn    = document.getElementById('state-cycle');
+    const STATES = ['idle', 'emergence', 'distortion', 'collapse'];
+
+    btn.style.display = 'block';
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation(); // prevent tap-flash from firing
+
+      const current = this._stateStore.current;
+      const nextIdx = (STATES.indexOf(current) + 1) % STATES.length;
+      const next    = STATES[nextIdx];
+
+      // Force state and lock for 4 seconds
+      this._stateStore.current     = next;
+      this._stateStore.lockedUntil = Date.now() + 4000;
+
+      btn.textContent = next + ' →';
+      setTimeout(() => { btn.textContent = 'cycle →'; }, 1200);
+    });
+    btn.addEventListener('touchend', (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      btn.click();
     });
   }
 

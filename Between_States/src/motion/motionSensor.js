@@ -127,22 +127,24 @@ export class MotionSensor {
   /**
    * _onOrientation(e)
    * ──────────────────
-   * Tracks the device moving from perpendicular to parallel to the ground —
-   * i.e. from upright portrait hold to lying flat.
+   * Tracks lateral (left–right) tilt of the device from upright portrait.
+   * Uses gamma (left–right tilt, −90 to 90°) rather than beta (front–back)
+   * because lateral tilt is perceptible during normal portrait use — a
+   * natural, expressive gesture the user makes while holding the phone.
    *
-   * Normalization via beta (front–back tilt, −180 to 180°):
-   *   beta ≈ 90°  — held upright in portrait  → tilt = 0  (no effect)
-   *   beta ≈ 0°   — lying flat, screen up      → tilt = 1  (full effect)
-   *   beta ≈ 45°  — halfway                    → tilt = 0.5
+   * Normalization via gamma:
+   *   gamma ≈   0° — held perfectly upright        → tilt = 0  (no effect)
+   *   gamma ≈ ±22° — slight left/right lean         → tilt = 0.5
+   *   gamma ≈ ±45°+ — significant lateral tilt     → tilt = 1  (full effect)
    *
-   * This means the tilt-driven Hydra effects are inactive during normal use
-   * and activate progressively as the device is laid flat.
+   * This makes the tilt-driven Hydra effects naturally perceptible during
+   * normal use, not only when the device is laid flat.
    */
   _onOrientation(e) {
-    const beta = e.beta ?? 0;
+    const gamma = e.gamma ?? 0;
 
-    // 1 − (|beta| / 90) inverts the metric: upright=0, flat=1
-    const magnitude = 1 - Math.min(Math.abs(beta) / 90, 1);
+    // |gamma| / 45 maps 0°=no tilt → 1, ±45°=full tilt → 1
+    const magnitude = Math.min(Math.abs(gamma) / 45, 1);
 
     // EMA: α = 0.25 — tilt signal is smooth, responds quickly
     this._smoothedTilt = this._smoothedTilt * 0.75 + magnitude * 0.25;

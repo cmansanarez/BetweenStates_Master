@@ -25,5 +25,11 @@ export class StateStore {
   constructor() {
     /** @type {'idle'|'emergence'|'distortion'|'collapse'} */
     this.current = STATES.IDLE;
+    /**
+     * lockedUntil — timestamp (ms) until which the state machine must not
+     * overwrite this.current. Set by the demo cycle button so each forced
+     * state is visible for ~4 s before audio resumes control.
+     */
+    this.lockedUntil = 0;
   }
 }

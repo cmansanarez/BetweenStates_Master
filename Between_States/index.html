@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- Mobile viewport: lock scale, prevent user zoom during the experience -->
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <!-- iOS full-screen web-app feel -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+    <title>Between States</title>
+
+    <!-- Mobile console for debugging — uncomment when needed, remove before final release -->
+    <!-- <script src="https://cdn.jsdelivr.net/npm/eruda"></script> -->
+    <!-- <script>eruda.init();</script> -->
+
+    <!-- Heavy libs loaded via CDN — they rely on browser globals and don't bundle cleanly -->
+    <!-- Heavy libs loaded via CDN — all expose window globals, no bundler needed -->
+    <script src="https://unpkg.com/ml5@1/dist/ml5.min.js"></script>
+    <script src="https://unpkg.com/hydra-synth@1.4.0/dist/hydra-synth.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/addons/p5.sound.min.js"></script>
+
+    <style>
+      /* ── Reset ── */
+      *,
+      *::before,
+      *::after {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #000;
+      }
+
+      /* ── AR container: MindAR renders camera feed + Three.js here ── */
+      #ar-container {
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+      }
+
+      /* MindAR creates a video and canvas inside #ar-container.
+         Both should fill the container and cover the screen. */
+      #ar-container video,
+      #ar-container canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100% !important;
+        height: 100% !important;
+        object-fit: cover;
+      }
+
+      /* ── Three.js canvas: 3D object layer above camera, below Hydra ── */
+      /* alpha: true on the renderer keeps this fully transparent except   */
+      /* where the 3D object is drawn. pointer-events: none lets taps fall  */
+      /* through to the document tap-flash listener.                        */
+      #three-canvas {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: block;
+        z-index: 1;
+        pointer-events: none;
+      }
+
+      /* ── Hydra canvas sits above Three.js and the camera feed ── */
+      /* opacity is driven by audioState.level via JS after experience starts. */
+      /* z-index 2 keeps it above #ar-container (0), #three-canvas (1),     */
+      /* and below overlay (100).                                            */
+      #hydra-canvas {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: block;
+        z-index: 2;
+      }
+
+      /* ── State HUD ── */
+      #state-hud {
+        position: fixed;
+        bottom: 1.2rem;
+        left: 1.2rem;
+        z-index: 200;
+        display: none;
+        flex-direction: column;
+        gap: 0.4rem;
+        pointer-events: none;
+      }
+
+      #state-hud .hud-state {
+        font-family: "Courier New", Courier, monospace;
+        font-size: 0.6rem;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: rgba(68, 255, 209, 0.9);
+        transition: color 0.4s;
+      }
+
+      #state-hud .hud-face {
+        font-family: "Courier New", Courier, monospace;
+        font-size: 0.55rem;
+        letter-spacing: 0.12em;
+        color: rgba(255, 255, 255, 0.35);
+      }
+
+      #state-hud .hud-bar-track {
+        width: 80px;
+        height: 2px;
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 1px;
+        overflow: hidden;
+      }
+
+      #state-hud .hud-bar-fill {
+        height: 100%;
+        width: 0%;
+        background: rgba(68, 255, 209, 0.7);
+        border-radius: 1px;
+        transition: width 0.08s linear, background 0.4s;
+      }
+
+      /* ── Camera flip button ── */
+      #camera-flip {
+        position: fixed;
+        top: 1.2rem;
+        right: 1.2rem;
+        z-index: 200;
+        background: rgba(255, 255, 255, 0.12);
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        color: rgba(255, 255, 255, 0.7);
+        font-family: "Courier New", Courier, monospace;
+        font-size: 0.7rem;
+        letter-spacing: 0.12em;
+        padding: 0.4rem 0.7rem;
+        cursor: pointer;
+        touch-action: manipulation;
+        display: none; /* shown by app.js after experience starts */
+      }
+
+      /* ── Tap-to-start overlay ── */
+      #overlay {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 1.5rem;
+        background: rgba(0, 0, 0, 0.88);
+        z-index: 100;
+        cursor: pointer;
+        /* manipulation: prevents double-tap zoom while keeping tap events intact */
+        touch-action: manipulation;
+        transition: opacity 0.6s ease;
+      }
+
+      #overlay.hidden {
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      #overlay h1 {
+        color: #fff;
+        font-family: "Courier New", Courier, monospace;
+        font-size: clamp(1.4rem, 6vw, 2.2rem);
+        font-weight: 300;
+        letter-spacing: 0.25em;
+        text-transform: uppercase;
+      }
+
+      #overlay .hint {
+        color: rgba(255, 255, 255, 0.45);
+        font-family: "Courier New", Courier, monospace;
+        font-size: clamp(0.7rem, 3vw, 0.9rem);
+        letter-spacing: 0.2em;
+        text-transform: lowercase;
+      }
+
+      #overlay .error {
+        color: rgba(255, 80, 80, 0.85);
+        font-family: "Courier New", Courier, monospace;
+        font-size: 0.8rem;
+        letter-spacing: 0.1em;
+        display: none;
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- MindAR renders camera feed + face tracking into this container -->
+    <div id="ar-container"></div>
+
+    <!-- Three.js renders the 3D object here (z-index 1, transparent bg) -->
+    <canvas id="three-canvas"></canvas>
+
+    <!-- Hydra renders into this canvas (z-index 2, opacity driven by audio) -->
+    <canvas id="hydra-canvas"></canvas>
+
+    <!-- Camera flip button — shown after experience starts -->
+    <button id="camera-flip" aria-label="flip camera">flip cam</button>
+
+    <!-- State HUD — shown after experience starts -->
+    <div id="state-hud">
+      <div class="hud-state">—</div>
+      <div class="hud-face">no face</div>
+      <div class="hud-bar-track"><div class="hud-bar-fill"></div></div>
+    </div>
+
+    <!-- Full-screen overlay — removed once the user grants mic access -->
+    <div id="overlay">
+      <h1>Between States</h1>
+      <p class="hint">tap to begin</p>
+      <p class="error" id="error-msg"></p>
+    </div>
+
+    <!-- ES module entry point -->
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

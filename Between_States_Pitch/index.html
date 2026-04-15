@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BETWEEN STATES — Live Performance XR Platform</title>
+  <meta name="description" content="A mobile-first XR system that transforms live music into a shared, embodied, and identity-driven visual experience." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+
+  <div class="scanlines" aria-hidden="true"></div>
+  <div class="scroll-progress" aria-hidden="true"></div>
+
+  <!-- ═══════════ 01 · HERO ═══════════ -->
+  <section class="hero" id="hero">
+    <canvas class="hero-canvas" aria-hidden="true"></canvas>
+    <div class="hero-content">
+      <p class="hero-eyebrow">Live Performance XR Platform</p>
+      <h1 class="hero-title">
+        <span class="glitch" data-text="BETWEEN">BETWEEN</span>
+        <span class="glitch glitch--alt" data-text="STATES">STATES</span>
+      </h1>
+      <p class="hero-tagline">
+        This is not a second screen experience.<br>
+        <em>This is an extension of the stage.</em>
+      </p>
+      <div class="hero-badges">
+        <span class="badge">Audio-Reactive</span>
+        <span class="badge">WebXR</span>
+        <span class="badge">Mobile-First</span>
+        <span class="badge badge--hl">No Headset Required</span>
+      </div>
+    </div>
+    <div class="scroll-hint" aria-label="Scroll down">
+      <div class="scroll-hint-line"></div>
+      <span>Scroll</span>
+    </div>
+  </section>
+
+
+  <!-- ═══════════ MV · MARKETING VISUAL ═══════════ -->
+  <section class="section mv" id="mv">
+    <div class="container">
+      <p class="section-eyebrow reveal">00 — Concept Visual</p>
+      <h2 class="section-title reveal">
+        One phone.<br>
+        <span class="neon neon--pink">An extension of the stage.</span>
+      </h2>
+    </div>
+    <div class="mv-stage reveal" data-delay="0">
+
+      <!-- Phone mockup -->
+      <div class="mv-phone">
+        <div class="mv-phone-frame">
+          <div class="mv-phone-screen">
+            <!-- Layered XR visualisation on screen -->
+            <div class="mv-layer mv-layer--camera"></div>
+            <div class="mv-layer mv-layer--hydra"></div>
+            <div class="mv-layer mv-layer--face">
+              <div class="mv-face-ring"></div>
+              <div class="mv-face-glitch"></div>
+            </div>
+            <div class="mv-layer mv-layer--hud">
+              <div class="mv-hud-dot mv-hud-dot--active">LIVE</div>
+              <div class="mv-waveform">
+                <span></span><span></span><span></span><span></span><span></span>
+                <span></span><span></span><span></span>
+              </div>
+            </div>
+          </div>
+          <div class="mv-phone-notch"></div>
+        </div>
+      </div>
+
+      <!-- Callout annotations -->
+      <div class="mv-callout mv-callout--tl reveal" data-delay="1">
+        <div class="mv-callout-line mv-callout-line--tl" aria-hidden="true"></div>
+        <div class="mv-callout-body">
+          <span class="mv-callout-label">Audio Reactive System</span>
+          <p>FFT analysis maps bass, mid &amp; treble to visual parameters in real time</p>
+        </div>
+      </div>
+
+      <div class="mv-callout mv-callout--tr reveal" data-delay="2">
+        <div class="mv-callout-line mv-callout-line--tr" aria-hidden="true"></div>
+        <div class="mv-callout-body">
+          <span class="mv-callout-label">Face-Linked Identity Layer</span>
+          <p>MindAR face tracking anchors glitch visuals to the user's face</p>
+        </div>
+      </div>
+
+      <div class="mv-callout mv-callout--bl reveal" data-delay="3">
+        <div class="mv-callout-line mv-callout-line--bl" aria-hidden="true"></div>
+        <div class="mv-callout-body">
+          <span class="mv-callout-label">Embodied Interaction</span>
+          <p>Gyroscope &amp; accelerometer translate physical motion into distortion</p>
+        </div>
+      </div>
+
+      <div class="mv-callout mv-callout--br reveal" data-delay="4">
+        <div class="mv-callout-line mv-callout-line--br" aria-hidden="true"></div>
+        <div class="mv-callout-body">
+          <span class="mv-callout-label">Mobile XR via QR Access</span>
+          <p>No headset, no download — scan once, experience instantly</p>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ═══════════ 02 · PREMISE ═══════════ -->
+  <section class="section premise" id="premise">
+    <div class="container">
+      <p class="section-eyebrow reveal">01 — Core Premise</p>
+      <h2 class="section-title reveal">
+        Identity is not an object.<br>
+        It is <span class="neon">interference.</span>
+      </h2>
+      <div class="premise-grid">
+        <div class="premise-card reveal" data-delay="0">
+          <div class="premise-glyph">◈</div>
+          <h3>Fluid</h3>
+          <p>Identity continuously transforms, refuses to stabilize into a fixed form.</p>
+        </div>
+        <div class="premise-card reveal" data-delay="1">
+          <div class="premise-glyph">⊗</div>
+          <h3>Unstable</h3>
+          <p>Glitch as behavioral language — disrupting visual coherence from within.</p>
+        </div>
+        <div class="premise-card reveal" data-delay="2">
+          <div class="premise-glyph">⊕</div>
+          <h3>Transforming</h3>
+          <p>Expression as interference, not object. Presence as signal, not image.</p>
+        </div>
+      </div>
+      <blockquote class="reveal" data-delay="3">
+        <span class="quote-main">"The medium is the message"</span>
+        <cite>— McLuhan, 1964<sup>[1]</sup>. Here, the body is the medium.</cite>
+      </blockquote>
+    </div>
+  </section>
+
+  <!-- ═══════════ 03 · PERSONAS ═══════════ -->
+  <section class="section personas" id="personas">
+    <div class="container">
+      <p class="section-eyebrow reveal">02 — Personas</p>
+      <h2 class="section-title reveal">
+        Designed for those who<br><span class="neon neon--pink">live inside the music.</span>
+      </h2>
+      <div class="persona-grid">
+
+        <!-- Primary Persona -->
+        <div class="persona-card persona-card--primary reveal" data-delay="0">
+          <div class="persona-header">
+            <div class="persona-avatar" aria-hidden="true">
+              <div class="avatar-ring"></div>
+              <span class="avatar-glyph">◈</span>
+            </div>
+            <div class="persona-meta">
+              <span class="persona-tag">Primary · 70% Focus</span>
+              <h3 class="persona-name">Alex, 26</h3>
+              <p class="persona-role">Festival Attendee &amp; Content Creator</p>
+            </div>
+          </div>
+          <div class="persona-body">
+            <div class="persona-section">
+              <span class="persona-label">Demographics</span>
+              <p>Age 18–35 · Attends concerts, raves, and queer arts events · Urban, digitally fluent</p>
+            </div>
+            <div class="persona-section">
+              <span class="persona-label">Goals</span>
+              <ul class="persona-list">
+                <li>Enhance and document the live music experience</li>
+                <li>Create unique, shareable content from events</li>
+                <li>Feel genuinely immersed, not just present</li>
+              </ul>
+            </div>
+            <div class="persona-section">
+              <span class="persona-label">Behaviors</span>
+              <ul class="persona-list">
+                <li>Records video through their phone constantly</li>
+                <li>Engages with AR filters and social overlays</li>
+                <li>Seeks participatory, interactive experiences</li>
+              </ul>
+            </div>
+            <div class="persona-section">
+              <span class="persona-label">Pain Points</span>
+              <ul class="persona-list">
+                <li>Passive viewing mediated entirely through a screen</li>
+                <li>Generic filters with no connection to the live moment</li>
+                <li>Feels like a spectator, not a participant</li>
+              </ul>
+            </div>
+            <blockquote class="persona-quote">
+              "I want to capture the moment but I also want to be <em>in</em> it."
+            </blockquote>
+          </div>
+        </div>
+
+        <!-- Secondary Persona -->
+        <div class="persona-card persona-card--secondary reveal" data-delay="1">
+          <div class="persona-header">
+            <div class="persona-avatar persona-avatar--secondary" aria-hidden="true">
+              <div class="avatar-ring"></div>
+              <span class="avatar-glyph">⊛</span>
+            </div>
+            <div class="persona-meta">
+              <span class="persona-tag persona-tag--secondary">Secondary · 30% Focus</span>
+              <h3 class="persona-name">Jordan, 38</h3>
+              <p class="persona-role">Festival Producer &amp; Queer Arts Organizer</p>
+            </div>
+          </div>
+          <div class="persona-body">
+            <div class="persona-section">
+              <span class="persona-label">Context</span>
+              <p>Produces 4–8 events per year · Manages 200–5,000 person events · Seeking novel audience engagement tools</p>
+            </div>
+            <div class="persona-section">
+              <span class="persona-label">Goals</span>
+              <ul class="persona-list">
+                <li>Differentiate their event from others in market</li>
+                <li>Increase audience engagement and dwell time</li>
+                <li>Offer interactive layer without hardware overhead</li>
+              </ul>
+            </div>
+            <div class="persona-section">
+              <span class="persona-label">Needs</span>
+              <ul class="persona-list">
+                <li>Scalable, QR-based deployment with no installs</li>
+                <li>Customizable visuals per artist or event theme</li>
+                <li>Culturally resonant with queer arts communities</li>
+              </ul>
+            </div>
+            <blockquote class="persona-quote persona-quote--secondary">
+              "I need something that feels <em>specific</em> to our event — not a generic app."
+            </blockquote>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ 04 · STATES ═══════════ -->
+  <section class="section states" id="states">
+    <div class="states-bg-text" aria-hidden="true">STATES</div>
+    <div class="container">
+      <p class="section-eyebrow reveal">03 — Behavioral System</p>
+      <h2 class="section-title reveal">
+        The system moves<br>through <span class="neon neon--pink">four states.</span>
+      </h2>
+    </div>
+    <div class="states-track">
+      <div class="state-card reveal" data-delay="0" data-color="aqua">
+        <span class="state-num">01</span>
+        <div class="state-body">
+          <h3>World in Context</h3>
+          <p>Minimal visual intervention. The system is latent, waiting for signal.</p>
+        </div>
+        <div class="state-dot" aria-hidden="true"></div>
+      </div>
+      <div class="state-card reveal" data-delay="1" data-color="blue">
+        <span class="state-num">02</span>
+        <div class="state-body">
+          <h3>Emergence</h3>
+          <p>Glitch elements begin to appear. Forms suggest identity before collapsing.</p>
+        </div>
+        <div class="state-dot" aria-hidden="true"></div>
+      </div>
+      <div class="state-card reveal" data-delay="2" data-color="pink">
+        <span class="state-num">03</span>
+        <div class="state-body">
+          <h3>Distortion</h3>
+          <p>Audio and motion intensify. Fragmentation increases. Signal overwhelms form.</p>
+        </div>
+        <div class="state-dot" aria-hidden="true"></div>
+      </div>
+      <div class="state-card reveal" data-delay="3" data-color="yellow">
+        <span class="state-num">04</span>
+        <div class="state-body">
+          <h3>Collapse / Becoming</h3>
+          <p>Identity dissolves into abstraction. No stable form is achieved. Only flux.</p>
+        </div>
+        <div class="state-dot" aria-hidden="true"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ 05 · STORYBOARD ═══════════ -->
+  <section class="section storyboard" id="storyboard">
+    <div class="container">
+      <p class="section-eyebrow reveal">04 — Experience Storyboard</p>
+      <h2 class="section-title reveal">
+        From scan to <span class="neon">becoming.</span>
+      </h2>
+      <div class="sb-track">
+
+        <div class="sb-frame reveal" data-delay="0">
+          <div class="sb-screen sb-screen--idle">
+            <div class="sb-screen-inner">
+              <div class="sb-qr-mark">
+                <div class="sb-qr-grid"></div>
+              </div>
+              <span class="sb-screen-label">QR · Entry</span>
+            </div>
+          </div>
+          <div class="sb-caption">
+            <span class="sb-step">Step 1</span>
+            <h4>QR Scan</h4>
+            <p>User scans code at venue. Experience loads instantly in browser — no download required.</p>
+          </div>
+        </div>
+
+        <div class="sb-connector reveal" data-delay="0" aria-hidden="true">→</div>
+
+        <div class="sb-frame reveal" data-delay="1">
+          <div class="sb-screen sb-screen--perms">
+            <div class="sb-screen-inner">
+              <div class="sb-perm-icons">
+                <span class="sb-perm-icon">🎤</span>
+                <span class="sb-perm-icon">📷</span>
+                <span class="sb-perm-icon">📡</span>
+              </div>
+              <span class="sb-screen-label">Permissions</span>
+            </div>
+          </div>
+          <div class="sb-caption">
+            <span class="sb-step">Step 2</span>
+            <h4>Tap to Activate</h4>
+            <p>Single tap grants mic, camera, and motion access. The system awakens.</p>
+          </div>
+        </div>
+
+        <div class="sb-connector reveal" data-delay="1" aria-hidden="true">→</div>
+
+        <div class="sb-frame reveal" data-delay="2">
+          <div class="sb-screen sb-screen--world">
+            <div class="sb-screen-inner">
+              <div class="sb-visual-world">
+                <div class="sb-waveform"></div>
+              </div>
+              <span class="sb-screen-label">Rear Camera · Environment</span>
+            </div>
+          </div>
+          <div class="sb-caption">
+            <span class="sb-step">Step 3</span>
+            <h4>World in Context</h4>
+            <p>Rear camera activates. Ambient visuals overlay the live environment. System is latent.</p>
+          </div>
+        </div>
+
+        <div class="sb-connector reveal" data-delay="2" aria-hidden="true">→</div>
+
+        <div class="sb-frame reveal" data-delay="3">
+          <div class="sb-screen sb-screen--face">
+            <div class="sb-screen-inner">
+              <div class="sb-face-ring"></div>
+              <div class="sb-glitch-bar"></div>
+              <span class="sb-screen-label">Front Camera · Identity</span>
+            </div>
+          </div>
+          <div class="sb-caption">
+            <span class="sb-step">Step 4</span>
+            <h4>Identity Mode</h4>
+            <p>Front camera activates face tracking. Glitch attaches to the face. Self becomes canvas.</p>
+          </div>
+        </div>
+
+        <div class="sb-connector reveal" data-delay="3" aria-hidden="true">→</div>
+
+        <div class="sb-frame reveal" data-delay="4">
+          <div class="sb-screen sb-screen--collapse">
+            <div class="sb-screen-inner">
+              <div class="sb-collapse-grid"></div>
+              <span class="sb-screen-label">Collapse · Becoming</span>
+            </div>
+          </div>
+          <div class="sb-caption">
+            <span class="sb-step">Step 5</span>
+            <h4>Collapse / Becoming</h4>
+            <p>Audio peaks. Identity dissolves into abstraction. No stable form is achieved. Only flux.</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ 06 · XR DIFFERENTIATION ═══════════ -->
+  <section class="section xr" id="xr">
+    <div class="container">
+      <p class="section-eyebrow reveal">05 — XR Differentiation</p>
+      <h2 class="section-title reveal">
+        Why XR? Because the<br>environment <span class="neon neon--blue">drives</span> the visuals.
+      </h2>
+      <div class="xr-grid">
+        <div class="xr-card reveal" data-delay="0">
+          <span class="xr-num">1</span>
+          <div class="xr-body">
+            <h3>Embodied Interaction</h3>
+            <p>Device movement alters visual output in real time. Tilt, shake, proximity — physical gestures become expressive data shaping the experience.<sup>[3]</sup></p>
+          </div>
+        </div>
+        <div class="xr-card reveal" data-delay="1">
+          <span class="xr-num">2</span>
+          <div class="xr-body">
+            <h3>Face / Body Anchoring</h3>
+            <p>Identity-linked visuals via front camera. Self becomes the canvas. Glitch attaches to the face, distorts, and ultimately collapses.<sup>[4]</sup></p>
+          </div>
+        </div>
+        <div class="xr-card reveal" data-delay="2">
+          <span class="xr-num">3</span>
+          <div class="xr-body">
+            <h3>Site-Specific Meaning</h3>
+            <p>Visuals driven by the live audio environment. The experience cannot be replicated outside its context. It only exists in the moment.<sup>[2]</sup></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ 07 · INFORMATION ARCHITECTURE ═══════════ -->
+  <section class="section arch" id="arch">
+    <div class="container">
+      <p class="section-eyebrow reveal">06 — Information Architecture</p>
+      <h2 class="section-title reveal">
+        A connected system.<br><span class="neon neon--chartreuse">Every layer, mapped.</span>
+      </h2>
+
+      <div class="arch-diagram reveal" data-delay="0">
+
+        <!-- Top row: inputs -->
+        <div class="arch-row arch-row--inputs">
+          <div class="arch-node arch-node--input">
+            <div class="arch-node-icon">🎤</div>
+            <div class="arch-node-label">Microphone</div>
+            <div class="arch-node-sub">Live audio · FFT</div>
+          </div>
+          <div class="arch-node arch-node--input">
+            <div class="arch-node-icon">📷</div>
+            <div class="arch-node-label">Rear Camera</div>
+            <div class="arch-node-sub">Environment · AR</div>
+          </div>
+          <div class="arch-node arch-node--input">
+            <div class="arch-node-icon">🫦</div>
+            <div class="arch-node-label">Front Camera</div>
+            <div class="arch-node-sub">Face tracking · Identity</div>
+          </div>
+          <div class="arch-node arch-node--input">
+            <div class="arch-node-icon">📡</div>
+            <div class="arch-node-label">Motion Sensor</div>
+            <div class="arch-node-sub">Gyro · Accelerometer</div>
+          </div>
+        </div>
+
+        <div class="arch-arrows-down" aria-hidden="true">
+          <span>↓</span><span>↓</span><span>↓</span><span>↓</span>
+        </div>
+
+        <!-- Middle row: processing -->
+        <div class="arch-row arch-row--core">
+          <div class="arch-node arch-node--core arch-node--wide">
+            <div class="arch-node-label">Web App · Browser-Native</div>
+            <div class="arch-core-pills">
+              <span class="arch-pill arch-pill--aqua">Hydra · Generative Visuals</span>
+              <span class="arch-pill arch-pill--blue">p5.js · Audio Mapping</span>
+              <span class="arch-pill arch-pill--pink">MindAR · Face Tracking</span>
+              <span class="arch-pill arch-pill--yellow">State Machine · 4 Modes</span>
+            </div>
+            <div class="arch-node-sub">Vite · No install required</div>
+          </div>
+        </div>
+
+        <div class="arch-side-inputs" aria-hidden="true">
+          <div class="arch-side-node">
+            <div class="arch-node arch-node--entry">
+              <div class="arch-node-icon">📲</div>
+              <div class="arch-node-label">QR Code</div>
+              <div class="arch-node-sub">Entry point</div>
+            </div>
+            <span class="arch-side-arrow">→</span>
+          </div>
+          <div class="arch-side-node arch-side-node--right">
+            <span class="arch-side-arrow">←</span>
+            <div class="arch-node arch-node--network">
+              <div class="arch-node-icon">🌐</div>
+              <div class="arch-node-label">Network</div>
+              <div class="arch-node-sub">Wi-Fi · Cellular</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="arch-arrows-down" aria-hidden="true">
+          <span>↓</span>
+        </div>
+
+        <!-- Bottom row: output -->
+        <div class="arch-row arch-row--output">
+          <div class="arch-node arch-node--output">
+            <div class="arch-node-icon">📱</div>
+            <div class="arch-node-label">Participant Device</div>
+            <div class="arch-node-sub">AR overlay · Visual output</div>
+          </div>
+          <div class="arch-node arch-node--output arch-node--env">
+            <div class="arch-node-icon">🔊</div>
+            <div class="arch-node-label">Live Audio Environment</div>
+            <div class="arch-node-sub">DJ · Stage · Crowd</div>
+          </div>
+        </div>
+
+      </div><!-- /.arch-diagram -->
+    </div>
+  </section>
+
+  <!-- ═══════════ 08 · XR EXPERIENCE LAYERS ═══════════ -->
+  <section class="section layers" id="layers">
+    <div class="container">
+      <p class="section-eyebrow reveal">07 — XR Experience Layers</p>
+      <h2 class="section-title reveal">
+        Not flat. Not fixed.<br><span class="neon neon--blue">Four spatial layers, stacked.</span>
+      </h2>
+      <div class="layers-diagram reveal" data-delay="0">
+        <div class="layer-item" data-layer="4">
+          <div class="layer-bar layer-bar--interaction">
+            <span class="layer-num">Layer 4</span>
+            <span class="layer-name">Interaction Layer</span>
+            <span class="layer-desc">Audio + Motion — real-time input driving all layers below</span>
+            <span class="layer-tech">Mic · Gyro · FFT · State Machine</span>
+          </div>
+        </div>
+        <div class="layer-item" data-layer="3">
+          <div class="layer-bar layer-bar--visual">
+            <span class="layer-num">Layer 3</span>
+            <span class="layer-name">Visual Layer</span>
+            <span class="layer-desc">Hydra generative output — glitch, distortion, abstraction</span>
+            <span class="layer-tech">Hydra · Three.js · p5.js</span>
+          </div>
+        </div>
+        <div class="layer-item" data-layer="2">
+          <div class="layer-bar layer-bar--identity">
+            <span class="layer-num">Layer 2</span>
+            <span class="layer-name">Identity Layer</span>
+            <span class="layer-desc">Front camera — face anchoring, self as canvas</span>
+            <span class="layer-tech">MindAR · Front Camera</span>
+          </div>
+        </div>
+        <div class="layer-item" data-layer="1">
+          <div class="layer-bar layer-bar--environment">
+            <span class="layer-num">Layer 1</span>
+            <span class="layer-name">Environment Layer</span>
+            <span class="layer-desc">Rear camera — physical space as foundation of the experience</span>
+            <span class="layer-tech">Rear Camera · WebXR</span>
+          </div>
+        </div>
+      </div>
+      <p class="layers-note reveal" data-delay="1">
+        Each layer feeds into the one above. The physical environment generates audio; audio drives state; state shapes visuals; visuals anchor to the face. The stack is embodied — not abstract.<sup>[3]</sup>
+      </p>
+    </div>
+  </section>
+
+  <!-- ═══════════ 09 · TECHNICAL SYSTEM ═══════════ -->
+  <section class="section tech" id="tech">
+    <div class="container">
+      <p class="section-eyebrow reveal">08 — Technical System</p>
+      <h2 class="section-title reveal">
+        Browser-native XR.<br>No app. No headset. <span class="neon">Just presence.</span>
+      </h2>
+
+      <div class="flow reveal" data-delay="0">
+        <div class="flow-node">
+          <div class="flow-label">Audio Input</div>
+          <div class="flow-sub">Mic · Environment</div>
+        </div>
+        <span class="flow-arrow" aria-hidden="true">→</span>
+        <div class="flow-node">
+          <div class="flow-label">FFT Analysis</div>
+          <div class="flow-sub">Bass · Mid · Treble</div>
+        </div>
+        <span class="flow-arrow" aria-hidden="true">→</span>
+        <div class="flow-node">
+          <div class="flow-label">State System</div>
+          <div class="flow-sub">4 behavioral modes</div>
+        </div>
+        <span class="flow-arrow" aria-hidden="true">→</span>
+        <div class="flow-node">
+          <div class="flow-label">Visual Mapping</div>
+          <div class="flow-sub">Hydra · p5.js</div>
+        </div>
+        <span class="flow-arrow" aria-hidden="true">→</span>
+        <div class="flow-node flow-node--final">
+          <div class="flow-label">AR Overlay</div>
+          <div class="flow-sub">WebXR · Mobile</div>
+        </div>
+      </div>
+
+      <div class="tech-rows reveal" data-delay="1">
+        <div class="tech-row">
+          <span class="tech-badge">Device Motion</span>
+          <span class="tech-sep">→</span>
+          <span class="tech-result">Distortion Parameters</span>
+        </div>
+        <div class="tech-row">
+          <span class="tech-badge tech-badge--pink">Face Detection</span>
+          <span class="tech-sep">→</span>
+          <span class="tech-result">Identity Anchoring</span>
+        </div>
+      </div>
+
+      <div class="stack reveal" data-delay="2">
+        <span class="stack-pill">Hydra</span>
+        <span class="stack-pill stack-pill--blue">p5.js</span>
+        <span class="stack-pill stack-pill--pink">WebAR</span>
+        <span class="stack-pill">Vite</span>
+        <span class="stack-pill stack-pill--yellow">WebRTC</span>
+        <span class="stack-pill">FFT</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ 10 · MARKET POSITIONING ═══════════ -->
+  <section class="section deploy" id="deploy">
+    <div class="container">
+      <p class="section-eyebrow reveal">09 — Market Positioning</p>
+      <h2 class="section-title reveal">
+        Deploy it anywhere<br>live music <span class="neon neon--orange">happens.</span>
+      </h2>
+      <div class="deploy-grid">
+        <div class="deploy-card reveal" data-delay="0">
+          <div class="deploy-icon">◉</div>
+          <h3>Festival Activation</h3>
+          <p>Scalable QR-based entry. No hardware overhead. Transforms passive crowds into active participants instantly.</p>
+        </div>
+        <div class="deploy-card reveal" data-delay="1">
+          <div class="deploy-icon">◈</div>
+          <h3>Live Performance</h3>
+          <p>Enhancement tool for DJs, producers, and electronic acts seeking deeper audience connection.</p>
+        </div>
+        <div class="deploy-card reveal" data-delay="2">
+          <div class="deploy-icon">⊞</div>
+          <h3>Gallery Installation</h3>
+          <p>Interactive identity exploration for curatorial and gallery contexts. The body as medium.</p>
+        </div>
+        <div class="deploy-card reveal" data-delay="3">
+          <div class="deploy-icon">⊛</div>
+          <h3>Queer Arts Programming</h3>
+          <p>Culturally resonant tool for queer arts organizers. Visibility that refuses fixed categorization.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ 11 · PROTOTYPE IN ACTION ═══════════ -->
+  <section class="section proto" id="proto">
+    <div class="container">
+      <p class="section-eyebrow reveal">10 — Prototype in Action</p>
+      <h2 class="section-title reveal">
+        Already working.<br><span class="neon neon--pink">Already real.</span>
+      </h2>
+      <div class="proto-grid">
+
+        <div class="proto-item reveal" data-delay="0">
+          <div class="proto-screen">
+            <div class="proto-screen-inner proto-screen--audio">
+              <div class="proto-waveform">
+                <div class="proto-bar" style="--h:40%"></div>
+                <div class="proto-bar" style="--h:75%"></div>
+                <div class="proto-bar" style="--h:55%"></div>
+                <div class="proto-bar" style="--h:90%"></div>
+                <div class="proto-bar" style="--h:35%"></div>
+                <div class="proto-bar" style="--h:65%"></div>
+                <div class="proto-bar" style="--h:80%"></div>
+                <div class="proto-bar" style="--h:45%"></div>
+                <div class="proto-bar" style="--h:70%"></div>
+                <div class="proto-bar" style="--h:55%"></div>
+              </div>
+              <div class="proto-hydra-sim"></div>
+            </div>
+          </div>
+          <div class="proto-caption">
+            <span class="proto-feature">Feature 1 · Basic</span>
+            <h4>Audio-Reactive Visuals</h4>
+            <p>Hydra generative output responds to live FFT analysis. Bass, mid, and treble each map to distinct visual parameters.</p>
+          </div>
+        </div>
+
+        <div class="proto-item reveal" data-delay="1">
+          <div class="proto-screen">
+            <div class="proto-screen-inner proto-screen--face">
+              <div class="proto-face-outline"></div>
+              <div class="proto-face-glitch"></div>
+            </div>
+          </div>
+          <div class="proto-caption">
+            <span class="proto-feature">Feature 2 · Advanced</span>
+            <h4>Face Tracking Identity Layer</h4>
+            <p>MindAR browser-based face detection. Glitch visuals anchor to facial landmarks. Self becomes the canvas in real time.</p>
+          </div>
+        </div>
+
+        <div class="proto-item reveal" data-delay="2">
+          <div class="proto-screen">
+            <div class="proto-screen-inner proto-screen--motion">
+              <div class="proto-gyro">
+                <div class="proto-gyro-ring proto-gyro-ring--1"></div>
+                <div class="proto-gyro-ring proto-gyro-ring--2"></div>
+                <div class="proto-gyro-ring proto-gyro-ring--3"></div>
+              </div>
+            </div>
+          </div>
+          <div class="proto-caption">
+            <span class="proto-feature">Feature 3 · Basic</span>
+            <h4>Motion-Driven Distortion</h4>
+            <p>Device gyroscope and accelerometer feed directly into visual distortion. Physical gesture shapes the image.</p>
+          </div>
+        </div>
+
+        <div class="proto-item reveal" data-delay="3">
+          <div class="proto-screen">
+            <div class="proto-screen-inner proto-screen--state">
+              <div class="proto-state-dots">
+                <div class="proto-state-dot proto-state-dot--active" data-label="Idle"></div>
+                <div class="proto-state-dot" data-label="Emergence"></div>
+                <div class="proto-state-dot" data-label="Distortion"></div>
+                <div class="proto-state-dot" data-label="Collapse"></div>
+              </div>
+              <div class="proto-state-line"></div>
+            </div>
+          </div>
+          <div class="proto-caption">
+            <span class="proto-feature">Feature 4 · Basic</span>
+            <h4>4-State Behavioral Machine</h4>
+            <p>Audio + motion thresholds trigger automated state transitions. The system behaves — it is not controlled.</p>
+          </div>
+        </div>
+
+        <div class="proto-item reveal" data-delay="4">
+          <div class="proto-screen">
+            <div class="proto-screen-inner proto-screen--ar">
+              <div class="proto-ar-grid"></div>
+              <div class="proto-ar-object"></div>
+            </div>
+          </div>
+          <div class="proto-caption">
+            <span class="proto-feature">Feature 5 · Basic</span>
+            <h4>3D Object in AR Space</h4>
+            <p>Three.js 3D model rendered in the scene with audio-driven opacity. Presence linked to sound intensity.</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ 12 · ROADMAP ═══════════ -->
+  <section class="section roadmap" id="roadmap">
+    <div class="container">
+      <p class="section-eyebrow reveal">11 — Roadmap</p>
+      <h2 class="section-title reveal">
+        12 months to<br><span class="neon neon--chartreuse">production.</span>
+      </h2>
+      <div class="timeline">
+        <div class="phase reveal" data-delay="0">
+          <div class="phase-range">0–3 mo</div>
+          <div class="phase-title">Phase 1</div>
+          <ul class="phase-list">
+            <li>Core system stability</li>
+            <li>Mobile performance</li>
+            <li>Visual coherence</li>
+          </ul>
+          <div class="phase-team">Solo builder</div>
+        </div>
+        <div class="phase reveal" data-delay="1">
+          <div class="phase-range">3–6 mo</div>
+          <div class="phase-title">Phase 2</div>
+          <ul class="phase-list">
+            <li>QR deployment system</li>
+            <li>Artist customization</li>
+            <li>Face/body anchoring</li>
+          </ul>
+          <div class="phase-team">1–2 collaborators</div>
+        </div>
+        <div class="phase reveal" data-delay="2">
+          <div class="phase-range">6–9 mo</div>
+          <div class="phase-title">Phase 3</div>
+          <ul class="phase-list">
+            <li>Pilot live event</li>
+            <li>User feedback</li>
+            <li>UX + onboarding</li>
+          </ul>
+          <div class="phase-team">2–3 team</div>
+        </div>
+        <div class="phase reveal" data-delay="3">
+          <div class="phase-range">9–12 mo</div>
+          <div class="phase-title">Phase 4</div>
+          <ul class="phase-list">
+            <li>Festival partnerships</li>
+            <li>Multi-user sync</li>
+            <li>Production deploy</li>
+          </ul>
+          <div class="phase-team">3–4 team</div>
+        </div>
+      </div>
+
+      <div class="funding reveal" data-delay="4">
+        <h3 class="funding-title">$1M Conceptual Allocation</h3>
+        <div class="funding-bars">
+          <div class="funding-row">
+            <span class="funding-label">Development</span>
+            <div class="funding-track"><div class="funding-fill" data-pct="40" data-color="aqua"></div></div>
+            <span class="funding-pct">40%</span>
+          </div>
+          <div class="funding-row">
+            <span class="funding-label">Production + Events</span>
+            <div class="funding-track"><div class="funding-fill" data-pct="25" data-color="pink"></div></div>
+            <span class="funding-pct">25%</span>
+          </div>
+          <div class="funding-row">
+            <span class="funding-label">Design + Visuals</span>
+            <div class="funding-track"><div class="funding-fill" data-pct="20" data-color="blue"></div></div>
+            <span class="funding-pct">20%</span>
+          </div>
+          <div class="funding-row">
+            <span class="funding-label">Marketing + Partnerships</span>
+            <div class="funding-track"><div class="funding-fill" data-pct="15" data-color="yellow"></div></div>
+            <span class="funding-pct">15%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ 13 · REFERENCES ═══════════ -->
+  <section class="section refs" id="refs">
+    <div class="container">
+      <p class="section-eyebrow reveal">12 — Bibliography</p>
+      <h2 class="section-title reveal">
+        Research &amp; <span class="neon">Grounding.</span>
+      </h2>
+      <div class="refs-grid">
+        <div class="refs-col reveal" data-delay="0">
+          <h3 class="refs-col-title">Non-AI Sources</h3>
+          <ol class="refs-list">
+            <li class="ref-item">
+              <span class="ref-num">[1]</span>
+              <div class="ref-body">
+                <span class="ref-author">McLuhan, M.</span>
+                <span class="ref-title">"Understanding Media: The Extensions of Man."</span>
+                <span class="ref-pub">MIT Press, 1964. — Media theory framing body as medium.</span>
+              </div>
+            </li>
+            <li class="ref-item">
+              <span class="ref-num">[2]</span>
+              <div class="ref-body">
+                <span class="ref-author">Salter, C.</span>
+                <span class="ref-title">"Entangled: Technology and the Transformation of Performance."</span>
+                <span class="ref-pub">MIT Press, 2010. — Site-specific, embodied performance &amp; tech.</span>
+              </div>
+            </li>
+            <li class="ref-item">
+              <span class="ref-num">[3]</span>
+              <div class="ref-body">
+                <span class="ref-author">Dourish, P.</span>
+                <span class="ref-title">"Where the Action Is: The Foundations of Embodied Interaction."</span>
+                <span class="ref-pub">MIT Press, 2001. — Embodied computing &amp; spatial interaction design.</span>
+              </div>
+            </li>
+            <li class="ref-item">
+              <span class="ref-num">[4]</span>
+              <div class="ref-body">
+                <span class="ref-author">Muñoz, J. E.</span>
+                <span class="ref-title">"Cruising Utopia: The Then and There of Queer Futurity."</span>
+                <span class="ref-pub">NYU Press, 2009. — Queer identity as fluid, forward-oriented becoming.</span>
+              </div>
+            </li>
+            <li class="ref-item">
+              <span class="ref-num">[5]</span>
+              <div class="ref-body">
+                <span class="ref-author">Benford, S. &amp; Giannachi, G.</span>
+                <span class="ref-title">"Performing Mixed Reality."</span>
+                <span class="ref-pub">MIT Press, 2011. — Mixed reality as live performance medium.</span>
+              </div>
+            </li>
+          </ol>
+        </div>
+        <div class="refs-col reveal" data-delay="1">
+          <h3 class="refs-col-title">AI Tool Citations</h3>
+          <ol class="refs-list refs-list--ai" start="6">
+            <li class="ref-item">
+              <span class="ref-num">[AI-1]</span>
+              <div class="ref-body">
+                <span class="ref-author">Anthropic.</span>
+                <span class="ref-title">"Claude Sonnet 4.5."</span>
+                <span class="ref-pub">Used for conceptual iteration, pitch structure, and copy refinement. 2025.</span>
+              </div>
+            </li>
+            <li class="ref-item">
+              <span class="ref-num">[AI-2]</span>
+              <div class="ref-body">
+                <span class="ref-author">Hydra Community.</span>
+                <span class="ref-title">"Hydra-Synth Documentation."</span>
+                <span class="ref-pub">hydra.ojack.xyz — Real-time visual synthesis reference for patch design. 2024.</span>
+              </div>
+            </li>
+            <li class="ref-item">
+              <span class="ref-num">[AI-3]</span>
+              <div class="ref-body">
+                <span class="ref-author">MindAR.js Team.</span>
+                <span class="ref-title">"MindAR.js — Web AR Library."</span>
+                <span class="ref-pub">hiukim.github.io/mind-ar-js-doc — Face tracking &amp; image tracking library docs. 2024.</span>
+              </div>
+            </li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ 14 · CLOSE ═══════════ -->
+  <section class="section close" id="close">
+    <canvas class="close-canvas" aria-hidden="true"></canvas>
+    <div class="container">
+      <p class="section-eyebrow reveal">13 — Proof Points</p>
+      <h2 class="section-title reveal">
+        Already working.<br><span class="neon">Already real.</span>
+      </h2>
+      <div class="proofs">
+        <div class="proof reveal" data-delay="0">
+          <div class="proof-stat">MVP</div>
+          <p>Working prototype with audio-reactive visuals and face tracking</p>
+        </div>
+        <div class="proof reveal" data-delay="1">
+          <div class="proof-stat">0</div>
+          <p>Headsets required. Browser-native XR delivery via QR code.</p>
+        </div>
+        <div class="proof reveal" data-delay="2">
+          <div class="proof-stat">∞</div>
+          <p>Scalable across venues, formats, and events worldwide</p>
+        </div>
+        <div class="proof reveal" data-delay="3">
+          <div class="proof-stat">1 QR</div>
+          <p>Single scan to enter the full immersive experience</p>
+        </div>
+      </div>
+      <div class="cta reveal" data-delay="4">
+        <p class="cta-statement">
+          Between States is an extension of the stage.<br>
+          Let's build it together.
+        </p>
+        <a href="mailto:hello@betweenstates.xyz" class="cta-btn">
+          <span>Get in Touch</span>
+          <span class="cta-arrow" aria-hidden="true">→</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ FOOTER ═══════════ -->
+  <footer class="footer">
+    <div class="container footer-inner">
+      <span class="footer-brand">BETWEEN STATES</span>
+      <span class="footer-copy">© 2025 — Live Performance XR Platform</span>
+    </div>
+  </footer>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

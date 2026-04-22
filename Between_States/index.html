@@ -170,6 +170,54 @@
         display: none; /* shown by app.js after experience starts */
       }
 
+      /* ── Orbital visibility toggle button (top-left) ── */
+      #toggle-orbitals {
+        position: fixed;
+        top: 1.2rem;
+        left: 1.2rem;
+        z-index: 200;
+        background: rgba(255, 255, 255, 0.10);
+        border: 1px solid rgba(255, 255, 255, 0.22);
+        color: rgba(255, 255, 255, 0.65);
+        font-family: "Courier New", Courier, monospace;
+        font-size: 0.65rem;
+        letter-spacing: 0.12em;
+        padding: 0.4rem 0.7rem;
+        cursor: pointer;
+        touch-action: manipulation;
+        display: none; /* shown by app.js after experience starts */
+      }
+
+      /* ── Full-screen state-transition flash overlay ── */
+      /* Fires a brief color burst when the system enters 'collapse'.        */
+      /* pointer-events: none so it never blocks interaction.                */
+      #state-flash {
+        position: fixed;
+        inset: 0;
+        z-index: 90;
+        pointer-events: none;
+        opacity: 0;
+        background: #FFEC00;
+      }
+
+      #state-flash.flash {
+        animation: stateFlash 0.45s ease-out forwards;
+      }
+
+      @keyframes stateFlash {
+        0%   { opacity: 0.55; }
+        100% { opacity: 0; }
+      }
+
+      /* ── HUD state description line ── */
+      #state-hud .hud-desc {
+        font-family: "Courier New", Courier, monospace;
+        font-size: 0.50rem;
+        letter-spacing: 0.10em;
+        color: rgba(255, 255, 255, 0.28);
+        line-height: 1.2;
+      }
+
       /* ── Tap-to-start overlay ── */
       #overlay {
         position: fixed;
@@ -232,12 +280,19 @@
     <!-- Camera flip button — shown after experience starts -->
     <button id="camera-flip" aria-label="flip camera">flip cam</button>
 
+    <!-- Orbital visibility toggle — shown after experience starts -->
+    <button id="toggle-orbitals" aria-label="toggle orbitals">orbitals: on</button>
+
     <!-- State cycle button — evaluator shortcut to preview all states -->
     <button id="state-cycle" aria-label="cycle state">cycle →</button>
+
+    <!-- Full-screen flash on state transition to collapse -->
+    <div id="state-flash" aria-hidden="true"></div>
 
     <!-- State HUD — shown after experience starts -->
     <div id="state-hud">
       <div class="hud-state">—</div>
+      <div class="hud-desc"></div>
       <div class="hud-face">no face</div>
       <div class="hud-bar-track"><div class="hud-bar-fill"></div></div>
     </div>

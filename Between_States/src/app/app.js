@@ -1,24 +1,34 @@
 /**
  * app.js
  * ─────────────────────────────────────────────────────────────────────────────
- * Orchestrates the startup sequence.
+ * Orchestrates the startup sequence and connects all subsystems.
  *
  * Responsibilities:
- *   1. Listen for the user's first tap/click on the overlay.
- *   2. On tap: initialize the microphone (requires user gesture on mobile).
- *   3. Hand the live audioState reference to Hydra so the patch can react.
- *   4. Fade out the overlay.
- *   5. Surface any errors (mic denied, etc.) back to the overlay UI.
+ *   1. Wait for first tap → run startup sequence inside the gesture handler.
+ *   2. Initialize ToneEngine, audio, motion, AR, Three.js in correct order.
+ *   3. Switch Hydra from idle → reactive patch.
+ *   4. Run the blend loop: Hydra opacity, face mask, state HUD, auto-demo.
+ *   5. Detect state changes → notify ToneEngine + fire collapse flash.
+ *   6. Wire UI buttons: camera flip, state cycle, orbital toggle.
+ *   7. Surface errors back to the overlay.
+ *
+ * iOS PERMISSION ORDER
+ * ─────────────────────
+ * DeviceMotionEvent.requestPermission() must fire FIRST, synchronously inside
+ * the gesture handler. The mic init (AudioAnalyzer.init) breaks the gesture
+ * context — once it's awaited, motion permission requests will silently fail.
  */
+
+import { ToneEngine } from '../audio/toneEngine.js';
 
 export class App {
   /**
-   * @param {AudioAnalyzer} audioAnalyzer  — audio capture + FFT module
-   * @param {HydraSetup}    hydraSetup     — Hydra canvas + patch module
-   * @param {StateStore}    stateStore     — live system state container
-   * @param {MotionSensor}  motionSensor   — device motion + orientation module
-   * @param {ARSystem}      arSystem       — camera feed + face tracking module
-   * @param {ThreeSetup}    threeSetup     — Three.js 3D object layer
+   * @param {AudioAnalyzer} audioAnalyzer
+   * @param {HydraSetup}    hydraSetup
+   * @param {StateStore}    stateStore
+   * @param {MotionSensor}  motionSensor
+   * @param {ARSystem}      arSystem
+   * @param {ThreeSetup}    threeSetup
    */
   constructor(audioAnalyzer, hydraSetup, stateStore, motionSensor, arSystem, threeSetup) {
     this._audioAnalyzer = audioAnalyzer;
@@ -27,31 +37,28 @@ export class App {
     this._motionSensor  = motionSensor;
     this._arSystem      = arSystem;
     this._threeSetup    = threeSetup;
+    this._toneEngine    = null;
 
     this._overlay     = document.getElementById('overlay');
     this._errorMsg    = document.getElementById('error-msg');
     this._flipBtn     = document.getElementById('camera-flip');
     this._hydraCanvas = document.getElementById('hydra-canvas');
+    this._flashState  = null;
+    this._blendRaf    = null;
+    this._flashRaf    = null;
   }
 
   /**
    * init()
    * ──────
-   * Attaches the tap/click listener to the overlay.
-   * Uses { once: true } so the handler auto-removes after the first trigger —
-   * prevents double-init if the user somehow taps twice very fast.
-   *
-   * We listen for both 'click' (desktop / mouse) and 'touchend' (mobile).
-   * 'touchstart' is intentionally avoided to prevent accidental triggers
-   * from scroll gestures on mobile.
+   * Attaches tap/click listener to the overlay.
+   * { once: true } auto-removes after first trigger.
    */
   init() {
     let started = false;
     const startHandler = (e) => {
       if (started) return;
       started = true;
-      // Prevent the ~300 ms synthesized click that follows touchend on iOS,
-      // which would otherwise call _start() a second time.
       e.preventDefault();
       this._start();
     };
@@ -59,61 +66,67 @@ export class App {
     this._overlay.addEventListener('touchend', startHandler, { once: true });
   }
 
+  // ── Private ────────────────────────────────────────────────────────────────
+
   /**
    * _start()
    * ────────
-   * Async startup sequence. Called once, inside the user gesture callback.
+   * Async startup inside the user-gesture handler.
    *
-   * Must remain inside the gesture stack for Web Audio to initialize on iOS.
-   * If called outside a gesture (e.g. from a setTimeout), the AudioContext
-   * will be suspended and mic access will silently fail on Safari.
+   * CRITICAL ordering on iOS:
+   *   1. motionSensor.requestPermission() — synchronous, must be before any await
+   *   2. audioAnalyzer.init()            — triggers mic dialog, breaks gesture context
+   *   3. ToneEngine.init()               — reuses p5's AudioContext (post-mic-init)
+   *   4. motionSensor.init()             — attaches event listeners
+   *   5. arSystem.init()                 — triggers camera dialog
    */
   async _start() {
     try {
-      // Initialize microphone and FFT.
-      // This call triggers the browser's mic-permission dialog on first run.
-      // On iOS/Safari the AudioContext is only allowed to start here because
-      // we are synchronously inside the user-gesture event handler.
-      // Request motion permission FIRST — iOS requires this within the
-      // synchronous gesture stack, before any other awaited operation.
-      // The mic init below triggers a separate permission dialog which
-      // breaks the gesture context, so motion must be requested before it.
-      // Non-fatal: if denied or unavailable, visuals still work via audio.
+      // ── Motion permission (iOS must be FIRST within synchronous gesture stack) ─
       try {
         await this._motionSensor.requestPermission();
       } catch (motionErr) {
         console.warn('[Between States] Motion permission unavailable:', motionErr.message ?? motionErr);
       }
 
+      // ── Microphone + FFT ──────────────────────────────────────────────────
       await this._audioAnalyzer.init();
 
-      // Now start the motion listeners (permission already granted above).
+      // ── Tone engine — reuse p5's AudioContext to avoid iOS context limit ──
+      // p5.sound exposes getAudioContext() globally after mic init resolves.
+      try {
+        const p5Ctx = typeof getAudioContext === 'function' ? getAudioContext() : null;
+        this._toneEngine = new ToneEngine();
+        this._toneEngine.init(p5Ctx);
+      } catch (toneErr) {
+        console.warn('[Between States] Tone engine unavailable:', toneErr.message ?? toneErr);
+      }
+
+      // ── Motion sensor listeners ───────────────────────────────────────────
       try {
         await this._motionSensor.init();
       } catch (motionErr) {
         console.warn('[Between States] Motion sensor unavailable:', motionErr.message ?? motionErr);
       }
 
-      // Start AR face tracking. Camera permission dialog fires here.
-      // Non-fatal: if camera is denied the experience continues without AR.
+      // ── AR face tracking + camera ─────────────────────────────────────────
       try {
         await this._arSystem.init('user');
       } catch (arErr) {
         console.warn('[Between States] AR unavailable:', arErr.message ?? arErr);
       }
 
-      // Begin the Three.js render loop with live references to arState and
-      // audioState. Opacity is driven by audio level each frame.
-      this._threeSetup.start(this._arSystem.arState, this._audioAnalyzer.state, this._stateStore);
+      // ── Three.js render loop ──────────────────────────────────────────────
+      this._threeSetup.start(
+        this._arSystem.arState,
+        this._audioAnalyzer.state,
+        this._stateStore
+      );
 
-      // flashState is read by the Hydra patch every tick via arrow functions.
-      // pixelate: 1 = no visible effect (1px blocks = passthrough).
-      // A tap sets it to 100 and _startFlashDecay() exponentially returns it to 1.
+      // flashState: read by Hydra every tick; tap sets pixelate → decays back to 1
       this._flashState = { pixelate: 1 };
 
-      // Switch the Hydra patch from idle → reactive.
-      // All state objects are passed as live references so Hydra's
-      // arrow functions always read the current frame's values.
+      // ── Switch Hydra to reactive patch ────────────────────────────────────
       this._hydraSetup.setReactivePatch(
         this._audioAnalyzer.state,
         this._stateStore,
@@ -122,25 +135,17 @@ export class App {
         this._arSystem.arState
       );
 
-      // Fade out the overlay. The CSS transition handles the animation;
-      // we just add the class. The overlay is pointer-events: none after fade.
+      // ── Fade overlay out ──────────────────────────────────────────────────
       this._overlay.classList.add('hidden');
 
-      // Attach the in-experience tap listener now that the overlay is gone.
+      // ── Wire UI ───────────────────────────────────────────────────────────
       this._setupTapFlash();
-
-      // Start audio-driven blend loop: Hydra canvas opacity tracks audio level.
       this._startBlendLoop();
-
-      // Show and wire the camera flip button.
       this._setupFlipButton();
-
-      // Show and wire the evaluator state-cycle button.
       this._setupStateCycleButton();
+      this._setupToggleOrbitalsButton();
 
     } catch (err) {
-      // Mic access was denied or the AudioContext failed.
-      // Show the error inline so the user knows what happened.
       console.error('[Between States] Audio init failed:', err);
 
       const isDenied = err?.message?.toLowerCase().includes('denied')
@@ -157,7 +162,7 @@ export class App {
       this._errorMsg.textContent = msg;
       this._errorMsg.style.display = 'block';
 
-      // Re-attach the tap listener so the user can try again.
+      // Allow retry
       let retrying = false;
       const retryHandler = (e) => {
         if (retrying) return;
@@ -173,88 +178,89 @@ export class App {
   /**
    * _setupTapFlash()
    * ─────────────────
-   * Attaches a document-level tap listener that triggers a pixelate flash
-   * on the o1 Hydra buffer. Called once the overlay has faded out.
+   * Document-level tap handler that:
+   *   1. Triggers a Hydra pixelate burst (decays over ~0.75 s).
+   *   2. Raycasts the tap into the Three.js scene for orbital/mask bursts.
    *
-   * The overlay becomes pointer-events: none after fade, so all taps on the
-   * canvas reach the document and trigger this handler.
+   * Buttons use stopPropagation() so their taps don't reach this handler.
    */
   _setupTapFlash() {
-    const onTap = () => {
+    const onTap = (e) => {
+      // Hydra pixelate flash
       this._flashState.pixelate = 100;
       this._startFlashDecay();
+
+      // 3D raycaster — trigger scale burst on hit objects
+      const clientX = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
+      const clientY = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
+      this._threeSetup.handleTap(clientX, clientY);
     };
     document.addEventListener('click',    onTap);
     document.addEventListener('touchend', onTap);
   }
 
   /**
-   * _startFlashDecay()
-   * ───────────────────
-   * Exponentially decays flashState.pixelate from 100 back to 1 using
-   * requestAnimationFrame. Each frame pulls the value 10% closer to 1,
-   * giving a fast initial drop that slows as it settles — ~0.75 s total.
-   */
-  /**
    * _startBlendLoop()
    * ──────────────────
-   * Each frame:
-   *   1. Sets Hydra canvas opacity from audio level (silence=0, loud=1).
-   *   2. When a face is detected, applies a CSS radial-gradient mask on the
-   *      Hydra canvas so it is fully opaque at the face centre and fades to
-   *      a low base opacity (~20%) at the edges — "face becomes glitch".
-   *      Without a face, the mask is removed and opacity applies uniformly.
-   *
-   * The mask is a radial-gradient from black (opaque) at centre to a
-   * semi-transparent grey at the edges. CSS mask-image uses luminance —
-   * black = fully masked (hidden), white = fully visible.
-   * We invert this: white at centre (show Hydra), dark at edges (show camera).
-   *
-   * Face mask radius is 1.5× faceSize so it generously covers the whole
-   * head rather than just the bounding box centre.
+   * 60 fps RAF loop that:
+   *   • Sets Hydra canvas opacity from audio level
+   *   • Applies CSS face-mask to Hydra when face is detected
+   *   • Updates state HUD (name, description, audio bar, face indicator)
+   *   • Detects state changes → calls ToneEngine.setState() + fires collapse flash
+   *   • Runs auto-demo: if silence > 10 s, cycles all four states automatically
    */
   _startBlendLoop() {
-    const arState  = this._arSystem.arState;
+    const arState = this._arSystem.arState;
 
-    // State HUD elements
+    // HUD elements
     const hud      = document.getElementById('state-hud');
     const hudState = hud.querySelector('.hud-state');
+    const hudDesc  = hud.querySelector('.hud-desc');
     const hudFace  = hud.querySelector('.hud-face');
     const hudFill  = hud.querySelector('.hud-bar-fill');
     hud.style.display = 'flex';
 
-    // HUD color per state — mirrors the pitch site palette
+    // State flash overlay (brief yellow/colored flash on collapse entry)
+    const stateFlashEl = document.getElementById('state-flash');
+
+    // Per-state color and description for HUD
     const STATE_COLOR = {
       idle:       'rgba(68,255,209,0.7)',
       emergence:  'rgba(48,79,254,0.9)',
       distortion: 'rgba(255,29,137,0.9)',
       collapse:   'rgba(255,236,0,0.9)',
     };
+    const STATE_DESC = {
+      idle:       'mic live · waiting',
+      emergence:  'face-track · 3D overlay · tones',
+      distortion: 'glitch · particles · tones',
+      collapse:   'burst · orbitals · full overload',
+    };
+
+    // State change tracking (for tone engine + flash)
+    let prevState = 'idle';
+
+    // Auto-demo: cycle states if silence persists for 10 s (~600 frames at 60 fps)
+    let silenceFrames  = 0;
+    let autoDemoActive = false;
+    let autoDemoStep   = 0;
+    let autoDemoNextAt = 0;
+    const AUTO_STATES  = ['idle', 'emergence', 'distortion', 'collapse'];
 
     const update = () => {
-      const level = this._audioAnalyzer.state.level;
+      const level    = this._audioAnalyzer.state.level;
+      const stateName = this._stateStore.current ?? 'idle';
 
-      // When a face is detected, guarantee a minimum opacity of 0.6 so the
-      // mask effect is always visible — even in near-silence the glitch shows
-      // on the face. Audio still pushes it to 1 for full domination.
-      // Floor raised to 0.85 — Hydra is always prominently visible.
-      // Audio still pushes to 1.0 at loud levels.
+      // ── Hydra opacity driven by audio level ─────────────────────────────
       const audioOpacity = 0.85 + Math.min(Math.pow(level * 8, 0.4), 1) * 0.15;
-      const opacity      = audioOpacity;
+      this._hydraCanvas.style.opacity = audioOpacity;
 
-      this._hydraCanvas.style.opacity = opacity;
-
+      // ── Face mask on Hydra canvas ────────────────────────────────────────
       if (arState.faceDetected) {
-        const cx = (arState.faceX * 100).toFixed(1) + '%';
-        const cy = (arState.faceY * 100).toFixed(1) + '%';
-        // Radius sized to cover from face centre to just past the head.
-        // faceSize * 120vw at typical selfie distance covers well.
+        const cx     = (arState.faceX * 100).toFixed(1) + '%';
+        const cy     = (arState.faceY * 100).toFixed(1) + '%';
         const radius = (arState.faceSize * 120).toFixed(1) + 'vw';
-
-        // Hard centre: white 0%→40% = fully visible glitch on face
-        // Sharp falloff: 40%→70% transition
-        // Edge: transparent (black) = camera shows through cleanly
-        const mask = `radial-gradient(ellipse ${radius} ${radius} at ${cx} ${cy}, white 40%, transparent 70%)`;
+        const mask   = `radial-gradient(ellipse ${radius} ${radius} at ${cx} ${cy}, white 40%, transparent 70%)`;
         this._hydraCanvas.style.webkitMaskImage = mask;
         this._hydraCanvas.style.maskImage       = mask;
       } else {
@@ -262,51 +268,98 @@ export class App {
         this._hydraCanvas.style.maskImage       = 'none';
       }
 
-      // Update state HUD
-      const stateName = this._stateStore.current ?? 'idle';
+      // ── State change detection ───────────────────────────────────────────
+      if (stateName !== prevState) {
+        // Notify tone engine — drone glides to new frequency/gain
+        this._toneEngine?.setState(stateName);
+
+        // Fire full-screen color flash when entering collapse
+        if (stateName === 'collapse' && stateFlashEl) {
+          stateFlashEl.classList.remove('flash');
+          void stateFlashEl.offsetWidth;   // force reflow to restart animation
+          stateFlashEl.classList.add('flash');
+        }
+
+        prevState = stateName;
+      }
+
+      // ── Auto-demo: silence detection ─────────────────────────────────────
+      if (level >= 0.04) {
+        // Audio activity — cancel any running auto-demo
+        silenceFrames = 0;
+        if (autoDemoActive) {
+          autoDemoActive = false;
+          autoDemoStep   = 0;
+          // Release state lock so audio resumes control
+          if (this._stateStore.lockedUntil > Date.now()) {
+            this._stateStore.lockedUntil = 0;
+          }
+        }
+      } else {
+        silenceFrames++;
+        // Trigger auto-demo after 10 s of silence
+        if (silenceFrames >= 600 && !autoDemoActive) {
+          autoDemoActive = true;
+          autoDemoStep   = 0;
+          autoDemoNextAt = 0;   // fire immediately on next frame
+        }
+      }
+
+      // Advance auto-demo sequence
+      if (autoDemoActive && Date.now() >= autoDemoNextAt) {
+        if (autoDemoStep < AUTO_STATES.length) {
+          this._stateStore.current     = AUTO_STATES[autoDemoStep];
+          this._stateStore.lockedUntil = Date.now() + 2800;
+          autoDemoNextAt               = Date.now() + 3200;
+          autoDemoStep++;
+        } else {
+          // Sequence complete — reset and allow another cycle after fresh silence
+          autoDemoActive = false;
+          autoDemoStep   = 0;
+          silenceFrames  = 0;
+        }
+      }
+
+      // ── State HUD ────────────────────────────────────────────────────────
       hudState.textContent = stateName.toUpperCase();
       hudState.style.color = STATE_COLOR[stateName] ?? STATE_COLOR.idle;
       hudFill.style.background = STATE_COLOR[stateName] ?? STATE_COLOR.idle;
       hudFace.textContent  = arState.faceDetected ? 'face ◈' : 'no face';
       hudFill.style.width  = Math.round(level * 100) + '%';
+      if (hudDesc) hudDesc.textContent = STATE_DESC[stateName] ?? '';
 
       this._blendRaf = requestAnimationFrame(update);
     };
+
     this._blendRaf = requestAnimationFrame(update);
   }
 
   /**
    * _setupFlipButton()
    * ───────────────────
-   * Shows the camera flip button and wires its click handler.
-   * stopPropagation() prevents the tap from bubbling to the document
-   * tap-flash listener and triggering a pixelate burst.
+   * Shows and wires the camera flip button (top-right).
    */
   _setupFlipButton() {
     this._flipBtn.style.display = 'block';
     this._flipBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
       this._flipBtn.textContent = '...';
-      this._flipBtn.disabled = true;
+      this._flipBtn.disabled    = true;
       try {
         await this._arSystem.switchCamera();
       } catch (err) {
         console.warn('[Between States] Camera switch failed:', err.message);
       }
       this._flipBtn.textContent = 'flip cam';
-      this._flipBtn.disabled = false;
+      this._flipBtn.disabled    = false;
     });
   }
 
   /**
    * _setupStateCycleButton()
    * ─────────────────────────
-   * Shows the demo cycle button (bottom-right) and wires it to cycle through
-   * idle → emergence → distortion → collapse → idle in a loop.
-   *
-   * Each tap locks the state for 4 s so the evaluator has time to see it
-   * before audio resumes control. The state HUD and 3D object color change
-   * immediately so the visual result is instantaneous.
+   * Shows the demo cycle button (bottom-right). Each tap advances the state
+   * and locks it for 4 s before audio resumes control.
    */
   _setupStateCycleButton() {
     const btn    = document.getElementById('state-cycle');
@@ -314,13 +367,11 @@ export class App {
 
     btn.style.display = 'block';
     btn.addEventListener('click', (e) => {
-      e.stopPropagation(); // prevent tap-flash from firing
-
+      e.stopPropagation();
       const current = this._stateStore.current;
       const nextIdx = (STATES.indexOf(current) + 1) % STATES.length;
       const next    = STATES[nextIdx];
 
-      // Force state and lock for 4 seconds
       this._stateStore.current     = next;
       this._stateStore.lockedUntil = Date.now() + 4000;
 
@@ -334,6 +385,37 @@ export class App {
     });
   }
 
+  /**
+   * _setupToggleOrbitalsButton()
+   * ─────────────────────────────
+   * Shows and wires the orbital visibility toggle button (top-left).
+   * Demonstrates "visibility toggles" as an explicit basic feature.
+   * Only has visible effect in rear-camera mode where orbitals are shown.
+   */
+  _setupToggleOrbitalsButton() {
+    const btn = document.getElementById('toggle-orbitals');
+    if (!btn) return;
+
+    btn.style.display = 'block';
+
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const nowVisible = this._threeSetup.toggleOrbitals();
+      btn.textContent  = nowVisible ? 'orbitals: on' : 'orbitals: off';
+    });
+    btn.addEventListener('touchend', (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      btn.click();
+    });
+  }
+
+  /**
+   * _startFlashDecay()
+   * ───────────────────
+   * Exponentially decays flashState.pixelate from 100 → 1 over ~0.75 s.
+   * Each frame pulls 10% of the remaining distance toward 1.
+   */
   _startFlashDecay() {
     if (this._flashRaf) cancelAnimationFrame(this._flashRaf);
 

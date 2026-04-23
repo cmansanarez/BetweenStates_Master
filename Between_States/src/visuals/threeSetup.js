@@ -71,7 +71,7 @@ export class ThreeSetup {
     // Particle system
     this._particles         = null;
     this._particleMat       = null;
-    this._particleCount     = 80;
+    this._particleCount     = 200;
     this._particlePositions = null;
     this._particleVelocities = null;
     this._particleLives     = null;
@@ -457,9 +457,9 @@ export class ThreeSetup {
 
     this._particleMat = new THREE.PointsMaterial({
       color:       0x44FFD1,
-      size:        0.032,
+      size:        0.068,      // 2× larger — 0.032 was barely visible
       transparent: true,
-      opacity:     0.85,
+      opacity:     0.92,
       blending:    THREE.AdditiveBlending,
       depthWrite:  false,
     });
@@ -484,44 +484,44 @@ export class ThreeSetup {
     const ar     = this._arState;
     const isRear = ar?.facingMode === 'environment';
 
-    // Color + opacity track state
+    // Color tracks state; opacity stays high — AdditiveBlending handles
+    // transparency naturally so we want each particle contribution strong
     this._particleMat.color.copy(ThreeSetup.STATE_COLORS[state]);
-    this._particleMat.opacity = 0.55 + level * 0.40;
+    this._particleMat.opacity = 0.88 + level * 0.12;
 
-    // Determine emitter position
-    let emitX = 0, emitY = 0, shouldEmit = false;
-
+    // Emitter position: face anchor (selfie) → mask position (rear) → screen
+    // centre as fallback so particles are always visible regardless of mode
+    let emitX = 0, emitY = 0;
     if (!isRear && ar?.faceDetected) {
       emitX = (ar.faceAnchorX * 2 - 1) * aspect;
       emitY = -(ar.faceAnchorY * 2 - 1);
-      shouldEmit = true;
     } else if (isRear && this._object?.visible) {
       emitX = this._object.position.x;
       emitY = this._object.position.y;
-      shouldEmit = true;
     }
+    // Always emit — minimum 1/frame guarantees the pool stays populated
 
-    // Spawn particles — burst rate driven by bass + overall level
-    if (shouldEmit) {
-      const emitCount = Math.floor(bass * 5 + level * 2);
-      for (let e = 0; e < emitCount; e++) {
-        const idx   = this._nextParticle;
-        this._nextParticle = (this._nextParticle + 1) % this._particleCount;
+    // Emission rate: quiet=1, loud bass=~22 — fills the 200-particle pool quickly
+    const emitCount = Math.floor(bass * 15 + level * 6) + 1;
+    for (let e = 0; e < emitCount; e++) {
+      const idx = this._nextParticle;
+      this._nextParticle = (this._nextParticle + 1) % this._particleCount;
 
-        const angle = Math.random() * Math.PI * 2;
-        const speed = 0.004 + bass * 0.024;
+      const angle = Math.random() * Math.PI * 2;
+      // Faster speed so particles visibly travel outward (was 0.004+bass*0.024)
+      const speed = 0.007 + bass * 0.055 + level * 0.02;
 
-        this._particlePositions[idx * 3]     = emitX;
-        this._particlePositions[idx * 3 + 1] = emitY;
-        this._particlePositions[idx * 3 + 2] = 0.1;
+      this._particlePositions[idx * 3]     = emitX;
+      this._particlePositions[idx * 3 + 1] = emitY;
+      this._particlePositions[idx * 3 + 2] = 0.1;
 
-        this._particleVelocities[idx * 3]     = Math.cos(angle) * speed;
-        this._particleVelocities[idx * 3 + 1] = Math.sin(angle) * speed;
-        this._particleVelocities[idx * 3 + 2] = (Math.random() - 0.5) * 0.003;
+      this._particleVelocities[idx * 3]     = Math.cos(angle) * speed;
+      this._particleVelocities[idx * 3 + 1] = Math.sin(angle) * speed;
+      this._particleVelocities[idx * 3 + 2] = (Math.random() - 0.5) * 0.006;
 
-        this._particleLives[idx]    = 1.0;
-        this._particleMaxLives[idx] = 35 + Math.random() * 65;   // 35–100 frames
-      }
+      this._particleLives[idx]    = 1.0;
+      // Longer lifetime keeps more particles alive simultaneously (was 35–100)
+      this._particleMaxLives[idx] = 60 + Math.random() * 90;   // 60–150 frames
     }
 
     // Advance all live particles; park dead ones off-screen

@@ -252,7 +252,13 @@ export class App {
       const stateName = this._stateStore.current ?? 'idle';
 
       // ── Hydra opacity driven by audio level ─────────────────────────────
-      const audioOpacity = 0.85 + Math.min(Math.pow(level * 8, 0.4), 1) * 0.15;
+      // When face is detected keep a higher floor (0.45) so the face-mask
+      // effect stays visible even in near-silence. Without a face the floor
+      // drops to 0.20 so the canvas clearly fades in with audio.
+      // Range: face+silence=0.45 → 1.0 · no-face+silence=0.20 → 1.0
+      const faceFloor  = arState.faceDetected ? 0.45 : 0.20;
+      const audioBoost = Math.min(level * 3.5, 1.0);
+      const audioOpacity = faceFloor + audioBoost * (1.0 - faceFloor);
       this._hydraCanvas.style.opacity = audioOpacity;
 
       // ── Face mask on Hydra canvas ────────────────────────────────────────

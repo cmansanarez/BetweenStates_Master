@@ -89,36 +89,53 @@ export class HydraSetup {
     };
 
     // ── Sketch globals on window (ES modules are strict — no bare assignment) ─
-    window.gate      = () => Math.max(0, Math.sin(time * 1.2));
-    window.antiGate  = () => 1 - window.gate();
-    window.colorCycle = () => {
-      let t = (time * 0.2) % 4;
-      if (t < 1)      return [1, 1, 0, 1];   // yellow
-      else if (t < 2) return [1, 0, 1, 1];   // magenta
-      else if (t < 3) return [0, 1, 1, 1];   // cyan
-      else            return [1, 1, 1, 1];   // white
+
+    // gate: audio-driven with a time-based floor — always some movement,
+    // dramatically more with loud audio. Replaces the old time-only sine gate.
+    window.gate = () => Math.max(a.fft[5] * 1.8, Math.abs(Math.sin(time * 0.9)) * 0.18);
+
+    // stateColor: maps current state to the project's 4-color palette.
+    // Evaluated by Hydra on every render tick via closure over stateStore.
+    // Replaces colorCycle() so hue reacts to state, not arbitrary time cycling.
+    window.stateColor = () => {
+      const s = stateStore.current ?? 'idle';
+      if (s === 'emergence')  return [0.188, 0.31,  1.0];    // blue   #304FFE
+      if (s === 'distortion') return [1.0,   0.114, 0.537];  // pink   #FF1D89
+      if (s === 'collapse')   return [1.0,   0.925, 0.0];    // yellow #FFEC00
+      return [0.267, 1.0, 0.82];                             // aqua   #44FFD1
     };
 
-    // ── Sketch (verbatim from user's patch) ──────────────────────────────────
+    // ── Reactive patch ───────────────────────────────────────────────────────
     shape(3, 0.01, 0.5).rotate(Math.PI / 2, 0.5)
-      .contrast(1.2).saturate(0)
+      .contrast(() => 1.1 + a.fft[0] * 2.5)        // bass pumps contrast hard
+      .saturate(() => 0.5 + a.fft[2] * 4.0)        // mids saturate the image
 
+      // State hue × audio level — no dead zone, kicks in immediately
       .color(
-        () => colorCycle()[0] * Math.max(0, a.fft[0] - 0.15) * 3,
-        () => colorCycle()[1] * Math.max(0, a.fft[0] - 0.15) * 3,
-        () => colorCycle()[2] * Math.max(0, a.fft[0] - 0.15) * 3
+        () => stateColor()[0] * (0.35 + a.fft[0] * 2.8),
+        () => stateColor()[1] * (0.35 + a.fft[0] * 2.8),
+        () => stateColor()[2] * (0.35 + a.fft[0] * 2.8)
       )
 
-      .modulatePixelate(noise(3, 3).scrollY(0, 0.2), [100, 200].fast(0.2).smooth(0.4))
-      .modulate(noise(6, 0.2).pixelate(80, 40), 0.05).scale(1.1)
+      // Pixelate: tap flash → big blocks; otherwise audio drives glitch size
+      // quiet = fine grain (6px), loud = coarse glitch blocks (up to 146px)
+      .modulatePixelate(
+        noise(3, 3).scrollY(0, 0.2),
+        () => flashState.pixelate > 2 ? flashState.pixelate : 6 + a.fft[5] * 140
+      )
+      // Warp amount is now audio-driven (was a fixed 0.05)
+      .modulate(noise(6, 0.2).pixelate(80, 40), () => 0.02 + a.fft[5] * 0.22)
+      .scale(() => 1.03 + a.fft[0] * 0.28)          // bass inflates the form
       .sub(src(o0).scale(1.01).rotate(0.005))
       .modulate(src(o0), [0, 1].fast(0.5).smooth(0.4))
 
-      .modulate(noise(6, 0.2).pixelate(80, 40), () => gate() * 0.05).scale(1.1)
+      // Louder = significantly brighter overall output
+      .brightness(() => -0.05 + a.fft[5] * 0.45)
 
-      .scrollX(() => gate() * (a.fft[1] + a.fft[2]) * 0.02 * Math.sin(time * 5))
-      .scrollY(() => gate() * (a.fft[0] + a.fft[3]) * 0.02 * Math.cos(time * 4))
-      .rotate(() =>  gate() * (a.fft[4] + a.fft[2]) * 0.02)
+      // Scroll/rotate multipliers raised 0.02 → 0.10; gate is now audio-driven
+      .scrollX(() => gate() * (a.fft[1] + a.fft[2]) * 0.10 * Math.sin(time * 5))
+      .scrollY(() => gate() * (a.fft[0] + a.fft[3]) * 0.10 * Math.cos(time * 4))
+      .rotate(() => (a.fft[4] + a.fft[2]) * 0.08)
 
       .out(o0);
   }
